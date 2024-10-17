@@ -1,0 +1,16 @@
+alns/
+awk/
+blast_binaries/
+blastdb/
+foldseek_db/
+foldseek_search/
+foldseek_tmp/
+rocx/
+rocxfdr/
+scop40pdb/
+sorted_alns/
+time/
+tmp/
+*.tmp
+tmp
+__pycache__/
