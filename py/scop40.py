@@ -221,7 +221,7 @@ class Scop40:
 			if not self.quiet:
 				if i%100000 == 0:
 					gb = get_memory_usage()
-					sys.stderr.write("%.1f k hits, %.1f Gb RAM used\r" % (i/1000, gb))
+					sys.stderr.write("%.1f k hits, %.1f Gb RAM used   \r" % (i/1000, gb))
 			q = qs[i].split('/')[0]
 			t = ts[i].split('/')[0]
 			if q == t:
@@ -318,7 +318,7 @@ class Scop40:
 		assert len(self.tps) == nrhits
 
 		if not self.quiet:
-			sys.stderr.write("%.1f M hits, %.1f Gb RAM used\n" % (nrhits/1e6, get_memory_usage()))
+			sys.stderr.write("%.1f M hits, %.1f Gb RAM used   \n" % (nrhits/1e6, get_memory_usage()))
 
 		if self.tpr_at_fpepq0_1 is None:
 			self.tpr_at_fpepq0_1 = tpr
