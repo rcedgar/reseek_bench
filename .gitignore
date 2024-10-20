@@ -14,3 +14,5 @@ tmp/
 *.tmp
 tmp
 __pycache__/
+old_scripts/
+saved_analysis/

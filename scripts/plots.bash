@@ -7,3 +7,4 @@
 ./plot_roc_v12.bash
 ./plot_roc_fold.bash
 ./plot_rocxfdr_pr.bash
+./plot_roc_alphas.bash

@@ -9,8 +9,11 @@ from algo_fmt import algo_fmt
 svg_fn = sys.argv[1]
 algos = sys.argv[2:]
 
-do_fold = (svg_fn.find("fold") >= 0)
-print("%s do_fold %s" % (sys.argv[0], str(do_fold)))
+level = "sf"
+if svg_fn.find("fold") >= 0:
+	level = "fold"
+elif svg_fn.find("family") >= 0:
+	level = "family"
 
 MIN_EPQ = 0.01
 MAX_EPQ = 10
@@ -45,15 +48,20 @@ fig, ax = plt.subplots()
 ax.ticklabel_format(axis='y', style='plain')
 ax.set_yscale('log')
 ax.yaxis.set_major_formatter(ScalarFormatter())
-ax.set_xticks(np.arange(0.0, 0.55, 0.05))
+if level == "family":
+	ax.set_xticks(np.arange(0.0, 1.0, 0.1))
+else:
+	ax.set_xticks(np.arange(0.0, 0.55, 0.05))
 ax.set_ylim(0.01, 10)
 ax.set_xlabel("Sensitivity (true positive rate)")
 ax.set_ylabel("False positive errors per query")
 
 for algo in algos:
 	name, kwargs = algo_fmt(algo)
-	if do_fold:
+	if level == "fold":
 		fn = "../analysis_fold/" + algo + ".txt"
+	elif level == "family":
+		fn = "../analysis_family/" + algo + ".txt"
 	else:
 		fn = "../analysis/" + algo + ".txt"
 	tprs, epqs, scores = read_analysis(fn)

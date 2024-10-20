@@ -14,9 +14,9 @@ AP = argparse.ArgumentParser(description = Usage)
 AP.add_argument("--input", required=False, default="/dev/stdin", help="Hits tsv file (default stdin)")
 AP.add_argument("--fields", required=False, default="1,2,3", help="query,target,score (default 1,2,3)")
 AP.add_argument('--type', required=True, choices=[ "score", "evalue"], help="Larger value is better (score) or worse (E-value)")
-AP.add_argument("--level", required=False, choices=[ "sf", "fold"], default="sf", help="sf or fold (default sf)")
+AP.add_argument("--level", required=False, choices=[ "family", "sf", "fold"], default="sf", help="family, sf or fold (default sf)")
 AP.add_argument('--sort', action='store_true', help="Sort input (default already sorted)")
-AP.add_argument('--lookup', default="../data/dom_scopid.tsv", help="Lookup file (default ../data/scop_lookup.fix.tsv)")
+AP.add_argument('--lookup', default="../data/dom_scopid.tsv", help="Lookup file (default ../data/dom_scopid.tsv)")
 
 Args = AP.parse_args()
 
@@ -52,5 +52,5 @@ sc = scop40.Scop40(se, level, dom2scopid_fn)
 
 # def eval_file(self, fn, qfldnr, tfldnr, scorefldnr, is_sorted):
 sc.eval_file(tsv_fn, qfldnr, tfldnr, scorefldnr, is_sorted)
-n = sc.roc2filehandle(sys.stdout)
+n = sc.plot2filehandle(sys.stdout)
 print(sc.get_summary())

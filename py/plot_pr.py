@@ -9,6 +9,8 @@ from algo_fmt import algo_fmt
 svg_fn = sys.argv[1]
 algos = sys.argv[2:]
 
+do_fold = (svg_fn.find("fold") >= 0)
+
 def read_analysis(fn):
 	f = open(fn)
 	precisions = []
@@ -39,7 +41,10 @@ ax.set_ylabel("Precision")
 
 for algo in algos:
 	name, kwargs = algo_fmt(algo)
-	fn = "../analysis/" + algo + ".txt"
+	if do_fold:
+		fn = "../analysis_fold/" + algo + ".txt"
+	else:
+		fn = "../analysis/" + algo + ".txt"
 	precisions, recalls, scores = read_analysis(fn)
 	ax.plot(recalls, precisions, label=name, **kwargs)
 

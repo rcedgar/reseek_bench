@@ -26,7 +26,7 @@ def algo_fmt(algo):
 	elif algo == "dali":
 		name = "DALI"
 		color = "skyblue"
-	elif algo == "tmalign":
+	elif algo == "tmalign" or algo == "TMalign":
 		name = "TM-align"
 		color = "magenta"
 	elif algo == "foldseek":

@@ -32,6 +32,19 @@ class Scop40:
 		else:
 			assert False
 
+	def set_possible_tfs_family(self):
+		self.dom2nrpossibletps = {}
+		self.NT = 0
+		for dom in self.doms:
+			fam = self.dom2fam[dom]
+			famsize = self.fam2size[fam]
+			assert famsize > 0
+			if famsize == 1:
+				self.nrsingletons += 1
+			self.dom2nrpossibletps[dom] = famsize - 1
+			self.NT += famsize - 1
+		self.NF = self.nrdompairs - self.NT # total possible FPs
+
 	def set_possible_tfs_sf(self):
 		self.dom2nrpossibletps = {}
 		self.NT = 0
@@ -63,7 +76,9 @@ class Scop40:
 		self.nrdompairs = self.nrdoms*self.nrdoms - self.nrdoms
 		self.nrsingletons = 0 # nr singleton domains (no possible non-trivial TPs)
 
-		if self.level == "sf":
+		if self.level == "family":
+			self.set_possible_tfs_family()
+		elif self.level == "sf":
 			self.set_possible_tfs_sf()
 		elif self.level == "fold":
 			self.set_possible_tfs_fold()
@@ -113,7 +128,11 @@ class Scop40:
 				self.folds.add(fold)
 			self.fold2doms[fold].append(dom)
 
-		if self.level == "sf":
+		if self.level == "family":
+			self.fam2size = {}
+			for fam in self.fams:
+				self.fam2size[fam] = len(self.fam2doms[fam])
+		elif self.level == "sf":
 			self.sf2size = {}
 			for sf in self.sfs:
 				self.sf2size[sf] = len(self.sf2doms[sf])
@@ -124,14 +143,14 @@ class Scop40:
 		else:
 			assert False
 
-	def eval_unsorted(self, qs, ts, scores):
+	def eval_unsorted(self, qs, ts, plot_scores):
 		if not self.quiet:
 			sys.stderr.write("sorting...\n")
 		nrhits = len(qs)
 		assert nrhits > 10
 		assert len(ts) == nrhits
-		assert len(scores) == nrhits
-		v = [ (scores[i], i) for i in range(nrhits) ]
+		assert len(plot_scores) == nrhits
+		v = [ (plot_scores[i], i) for i in range(nrhits) ]
 		do_reverse = (self.se == "s")
 		v_sorted = sorted(v, reverse=do_reverse)
 		qs_sorted = []
@@ -144,7 +163,7 @@ class Scop40:
 				continue
 			qs_sorted.append(q)
 			ts_sorted.append(t)
-			scores_sorted.append(scores[i])
+			scores_sorted.append(plot_scores[i])
 		if not self.quiet:
 			sys.stderr.write("...done\n")
 		self.eval_sorted(qs_sorted, ts_sorted, scores_sorted)
@@ -153,7 +172,7 @@ class Scop40:
 	def read_file(self, fn, qfldnr, tfldnr, scorefldnr):
 		self.qs = []
 		self.ts = []
-		self.scores = []
+		self.plot_scores = []
 		if not self.quiet:
 			sys.stderr.write("Reading %s...\n" % fn)
 		for line in open(fn):
@@ -164,23 +183,23 @@ class Scop40:
 				continue
 			self.qs.append(q)
 			self.ts.append(t)
-			self.scores.append(float(flds[scorefldnr]))
+			self.plot_scores.append(float(flds[scorefldnr]))
 		if not self.quiet:
 			sys.stderr.write("...done\n")
 
 	def eval_file(self, fn, qfldnr, tfldnr, scorefldnr, is_sorted):
 		self.read_file(fn, qfldnr, tfldnr, scorefldnr)
 		if is_sorted:
-			self.eval_sorted(self.qs, self.ts, self.scores)
+			self.eval_sorted(self.qs, self.ts, self.plot_scores)
 		else:
-			self.eval_unsorted(self.qs, self.ts, self.scores)
+			self.eval_unsorted(self.qs, self.ts, self.plot_scores)
 
-	def eval_sorted(self, qs, ts, scores):
+	def eval_sorted(self, qs, ts, plot_scores):
 		unknown_doms = set()
 		nrhits = len(qs)
 		assert nrhits > 10
 		assert len(ts) == nrhits
-		assert len(scores) == nrhits
+		assert len(plot_scores) == nrhits
 		last_score = None
 
 		ntp = 0         # accumulated nr of TP hits
@@ -189,22 +208,14 @@ class Scop40:
 	# for plot with TPR on X axis
 		tpstep = 0.01   # bin size for TPs (X axis tick marks)
 		tprt = 0.01     # current TPR threshold, +=tpstep during scan
-		self.roc_tprs = []
-		self.roc_epqs = []
-		self.roc_scores = []
 
 	# for plot with FPR on X axis
 		epqmul = pow(2, 1/3)	# multiplier
-		epqt = 0.01				# current FPR threshold, *=epqmul during scan
-		maxepq = 10
-		self.rocf_tprs = []
-		self.rocf_epqs = []
-		self.rocf_scores = []
-
-	# for Precision-Recall plot
-		self.rocpr_precisions = []
-		self.rocpr_recalls = []
-		self.rocpr_scores= []
+		self.plot_tprs = []
+		self.plot_fprs = []
+		self.plot_epqs = []
+		self.plot_scores = []
+		self.plot_precisions = []
 
 		self.tpr_at_fpepq0_1 = None
 		self.tpr_at_fpepq1 = None
@@ -226,7 +237,7 @@ class Scop40:
 			t = ts[i].split('/')[0]
 			if q == t:
 				assert False, "Self-hits not removed"
-			score = scores[i]
+			score = plot_scores[i]
 
 			if i > 0 and last_score != score:
 				if not self.score1_is_better(last_score, score):
@@ -234,7 +245,18 @@ class Scop40:
 						f"Not sorted correctly {q=} {t=} {self.se=} {last_score=} {score=}"
 			last_score = score
 
-			if self.level == "sf":
+			if self.level == "family":
+				qfam = self.dom2fam.get(q)
+				tfam = self.dom2fam.get(t)
+				if qfam is None or tfam is None:
+					if qfam is None:
+						unknown_doms.add(q)
+					if tfam is None:
+						unknown_doms.add(t)
+					tp = False
+				else:
+					tp = (qfam == tfam)
+			elif self.level == "sf":
 				qsf = self.dom2sf.get(q)
 				tsf = self.dom2sf.get(t)
 				if qsf is None or tsf is None:
@@ -273,14 +295,11 @@ class Scop40:
 			fpepq = float(nfp)/self.nrdoms
 
 			# precision = tp/(tp + fp)
-			# recall = tp/(fp + fn)
-			nfn = self.NT - ntp
 			precision = 0
+			fpr = 0
 			if ntp+nfp > 0:
 				precision = ntp/(ntp + nfp)
-			recall = 0
-			if ntp+nfn > 0:
-				recall = ntp/(ntp + nfn)
+				fpr = nfp/(ntp + nfp)
 
 			if fpepq >= 0.1 and self.tpr_at_fpepq0_1 is None:
 				self.tpr_at_fpepq0_1 = tpr
@@ -289,21 +308,13 @@ class Scop40:
 			if fpepq >= 10 and self.tpr_at_fpepq10 is None:
 				self.tpr_at_fpepq10 = tpr
 			if tpr >= tprt:
-				self.roc_tprs.append(tprt)
-				self.roc_epqs.append(fpepq)
-				self.roc_scores.append(last_score)
-
-				self.rocpr_precisions.append(precision)
-				self.rocpr_recalls.append(recall)
-				self.rocpr_scores.append(last_score)
+				self.plot_tprs.append(tprt)
+				self.plot_fprs.append(fpr)
+				self.plot_epqs.append(fpepq)
+				self.plot_scores.append(last_score)
+				self.plot_precisions.append(precision)
 
 				tprt += tpstep
-
-			if epqt < maxepq and fpepq >= epqt:
-				self.rocf_tprs.append(tpr)
-				self.rocf_epqs.append(fpepq)
-				self.rocf_scores.append(last_score)
-				epqt *= epqmul
 
 			last_score = score
 
@@ -332,21 +343,15 @@ class Scop40:
 		tpr = float(ntp)/self.NT
 		fpepq = float(nfp)/self.nrdoms
 
-		self.roc_tprs.append(tprt)
-		self.roc_epqs.append(fpepq)
-		self.roc_scores.append(last_score)
-
-		self.rocf_tprs.append(tprt)
-		self.rocf_epqs.append(fpepq)
-		self.rocf_scores.append(last_score)
-
-		self.rocpr_precisions.append(precision)
-		self.rocpr_recalls.append(recall)
-		self.rocpr_scores.append(last_score)
+		self.plot_tprs.append(tprt)
+		self.plot_fprs.append(fpr)
+		self.plot_epqs.append(fpepq)
+		self.plot_scores.append(last_score)
+		self.plot_precisions.append(precision)
 
 		self.nrtps_to_firstfp = 0
 		for i in range(nrhits):
-			score = scores[i]
+			score = plot_scores[i]
 			tp = self.tps[i]
 			q = qs[i].split('/')[0]
 			tp = self.tps[i]
@@ -369,7 +374,7 @@ class Scop40:
 
 	def __init__(self, se, level, dom2scopid_fn, quiet = False):
 		assert se == "s" or se == "e" # score or E-value
-		assert level == "sf" or level == "fold"
+		assert level == "family" or level == "sf" or level == "fold"
 
 		self.se = se
 		self.level = level
@@ -384,51 +389,35 @@ class Scop40:
 		self.read_dom2scopid(dom2scopid_fn)
 		self.set_possible_tfs()
 
-	def roc2file(self, fn):
+	def plot2file(self, fn):
 		f = open(fn, "w")
 		self.roc2filehandle(f)
 		f.close()
 
-	def roc2filehandle(self, f):
-		n = len(self.roc_tprs)
-		assert len(self.roc_epqs) == n
-		assert len(self.roc_scores) == n
-		f.write("tpr\tepq\tscore\n")
+	def plot2filehandle(self, f):
+		n = len(self.plot_tprs)
+		if len(self.plot_fprs) != n:
+			assert False, "%d,%d" % (len(self.plot_fprs), n)
+		assert len(self.plot_epqs) == n
+		assert len(self.plot_scores) == n
+		f.write("tpr\tepq\tfpr\tprecision\tscore\n")
 		for i in range(n):
-			s = "%.4g" % self.roc_tprs[i]
-			s += "\t%.4g" % self.roc_epqs[i]
-			s += "\t%.4g" % self.roc_scores[i]
-			f.write(s + '\n')
-
-		n = len(self.rocf_tprs)
-		assert len(self.rocf_epqs) == n
-		assert len(self.rocf_scores) == n
-		f.write("epq\ttpr\tscore\n")
-		for i in range(n):
-			s = "%.4g" % self.rocf_epqs[i]
-			s += "\t%.4g" % self.rocf_tprs[i]
-			s += "\t%.4g" % self.rocf_scores[i]
-			f.write(s + '\n')
-
-		n = len(self.rocpr_precisions)
-		assert len(self.rocpr_recalls) == n
-		assert len(self.rocpr_scores) == n
-		f.write("precision\trecall\tscore\n")
-		for i in range(n):
-			s = "%.4g" % self.rocpr_precisions[i]
-			s += "\t%.4g" % self.rocpr_recalls[i]
-			s += "\t%.4g" % self.rocpr_scores[i]
+			s = "%.4g" % self.plot_tprs[i]
+			s += "\t%.4g" % self.plot_epqs[i]
+			s += "\t%.4g" % self.plot_fprs[i]
+			s += "\t%.4g" % self.plot_precisions[i]
+			s += "\t%.4g" % self.plot_scores[i]
 			f.write(s + '\n')
 
 	def roc_area(self, lo_epq, hi_epq):
-		n = len(self.rocf_tprs)
-		assert len(self.rocf_epqs) == n
-		assert len(self.rocf_scores) == n
+		n = len(self.plot_tprs)
+		assert len(self.plot_epqs) == n
+		assert len(self.plot_scores) == n
 		total = 0
 		for i in range(n):
-			epq = self.rocf_epqs[i]
+			epq = self.plot_epqs[i]
 			if epq >= lo_epq and epq <= hi_epq:
-				tpr = self.rocf_tprs[i]
+				tpr = self.plot_tprs[i]
 				total += tpr
 		return total
 

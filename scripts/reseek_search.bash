@@ -2,7 +2,7 @@
 
 mkdir -p ../alns ../sorted_alns ../time
 
-for mode in fast sensitive ## verysensitive not worth it
+for mode in fast sensitive verysensitive
 do
 	/bin/time -v -o ../time/reseek_$mode \
 	reseek \
