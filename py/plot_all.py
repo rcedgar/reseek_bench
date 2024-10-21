@@ -52,7 +52,7 @@ def read_analysis(fn):
 nr_algos = len(algos)
 nr_rows = 3
 nr_cols = 3
-fig, axs = plt.subplots(ncols=nr_rows, nrows=nr_rows, \
+fig, axs = plt.subplots(ncols=nr_cols, nrows=nr_rows, \
 	figsize=(20, 20), layout="constrained")
 row = 0
 col = 0

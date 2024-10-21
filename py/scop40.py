@@ -25,6 +25,7 @@ def getsf(scopid):
 
 class Scop40:
 	def score1_is_better(self, score1, score2):
+		assert not score1 is None and not score2 is None
 		if self.se == 's':
 			return score1 > score2
 		elif self.se == 'e':
@@ -172,7 +173,7 @@ class Scop40:
 	def read_file(self, fn, qfldnr, tfldnr, scorefldnr):
 		self.qs = []
 		self.ts = []
-		self.plot_scores = []
+		self.scores = []
 		if not self.quiet:
 			sys.stderr.write("Reading %s...\n" % fn)
 		for line in open(fn):
@@ -183,34 +184,70 @@ class Scop40:
 				continue
 			self.qs.append(q)
 			self.ts.append(t)
-			self.plot_scores.append(float(flds[scorefldnr]))
+			self.scores.append(float(flds[scorefldnr]))
 		if not self.quiet:
 			sys.stderr.write("...done\n")
 
 	def eval_file(self, fn, qfldnr, tfldnr, scorefldnr, is_sorted):
 		self.read_file(fn, qfldnr, tfldnr, scorefldnr)
 		if is_sorted:
-			self.eval_sorted(self.qs, self.ts, self.plot_scores)
+			self.eval_sorted(self.qs, self.ts, self.scores)
 		else:
-			self.eval_unsorted(self.qs, self.ts, self.plot_scores)
+			self.eval_unsorted(self.qs, self.ts, self.scores)
 
-	def eval_sorted(self, qs, ts, plot_scores):
+	def is_tp(self, q, t):
+		if self.level == "family":
+			qfam = self.dom2fam.get(q)
+			tfam = self.dom2fam.get(t)
+			if qfam is None or tfam is None:
+				if qfam is None:
+					self.unknown_doms.add(q)
+				if tfam is None:
+					self.unknown_doms.add(t)
+				return False
+			else:
+				return qfam == tfam
+		elif self.level == "sf":
+			qsf = self.dom2sf.get(q)
+			tsf = self.dom2sf.get(t)
+			if qsf is None or tsf is None:
+				if qsf is None:
+					self.unknown_doms.add(q)
+				if tsf is None:
+					self.unknown_doms.add(t)
+				return False
+			else:
+				return (qsf == tsf)
+		elif self.level == "fold":
+			qfold = self.dom2fold.get(q)
+			tfold = self.dom2fold.get(t)
+			if qfold is None or tfold is None:
+				if qfold is None:
+					self.unknown_doms.add(q)
+				if tfold is None:
+					self.unknown_doms.add(t)
+				return False
+			else:
+				return (qfold == tfold)
+		assert False
+
+	def eval_sorted(self, qs, ts, scores):
+		self.qs = qs
+		self.ts = ts
+		self.scores = scores
 		unknown_doms = set()
 		nrhits = len(qs)
 		assert nrhits > 10
 		assert len(ts) == nrhits
-		assert len(plot_scores) == nrhits
+		assert len(scores) == nrhits
 		last_score = None
 
 		ntp = 0         # accumulated nr of TP hits
 		nfp = 0         # accumulated nr of FP hits
 
-	# for plot with TPR on X axis
 		tpstep = 0.01   # bin size for TPs (X axis tick marks)
 		tprt = 0.01     # current TPR threshold, +=tpstep during scan
 
-	# for plot with FPR on X axis
-		epqmul = pow(2, 1/3)	# multiplier
 		self.plot_tprs = []
 		self.plot_fprs = []
 		self.plot_epqs = []
@@ -221,9 +258,11 @@ class Scop40:
 		self.tpr_at_fpepq1 = None
 		self.tpr_at_fpepq10 = None
 
-		dom2score_firstfp = {}
+		self.dom2score_firstfp = {}
+		self.dom2score_firsttp = {}
 		for dom in self.doms:
-			dom2score_firstfp[dom] = None
+			self.dom2score_firstfp[dom] = None
+			self.dom2score_firsttp[dom] = None
 
 		self.tps = []
 		if not self.quiet:
@@ -232,12 +271,13 @@ class Scop40:
 			if not self.quiet:
 				if i%100000 == 0:
 					gb = get_memory_usage()
-					sys.stderr.write("%.1f k hits, %.1f Gb RAM used   \r" % (i/1000, gb))
+					pct = 100*i/nrhits
+					sys.stderr.write("%.1f%%, %.1f Gb RAM used   \r" % (pct, gb))
 			q = qs[i].split('/')[0]
 			t = ts[i].split('/')[0]
 			if q == t:
 				assert False, "Self-hits not removed"
-			score = plot_scores[i]
+			score = scores[i]
 
 			if i > 0 and last_score != score:
 				if not self.score1_is_better(last_score, score):
@@ -245,47 +285,17 @@ class Scop40:
 						f"Not sorted correctly {q=} {t=} {self.se=} {last_score=} {score=}"
 			last_score = score
 
-			if self.level == "family":
-				qfam = self.dom2fam.get(q)
-				tfam = self.dom2fam.get(t)
-				if qfam is None or tfam is None:
-					if qfam is None:
-						unknown_doms.add(q)
-					if tfam is None:
-						unknown_doms.add(t)
-					tp = False
-				else:
-					tp = (qfam == tfam)
-			elif self.level == "sf":
-				qsf = self.dom2sf.get(q)
-				tsf = self.dom2sf.get(t)
-				if qsf is None or tsf is None:
-					if qsf is None:
-						unknown_doms.add(q)
-					if tsf is None:
-						unknown_doms.add(t)
-					tp = False
-				else:
-					tp = (qsf == tsf)
-			elif self.level == "fold":
-				qfold = self.dom2fold.get(q)
-				tfold = self.dom2fold.get(t)
-				if qfold is None or tfold is None:
-					if qfold is None:
-						unknown_doms.add(q)
-					if tfold is None:
-						unknown_doms.add(t)
-					tp = False
-				else:
-					tp = (qfold == tfold)
-
+			tp = self.is_tp(q, t)
 			if tp:
 				ntp += 1
+				if self.dom2score_firsttp.get(q) is None or \
+					self.score1_is_better(score, self.dom2score_firsttp[q]):
+					self.dom2score_firsttp[q] = score
 			else:
 				nfp += 1
-				if dom2score_firstfp.get(q) is None or \
-					self.score1_is_better(score, dom2score_firstfp[q]):
-					dom2score_firstfp[q] = score
+				if self.dom2score_firstfp.get(q) is None or \
+					self.score1_is_better(score, self.dom2score_firstfp[q]):
+					self.dom2score_firstfp[q] = score
 			self.tps.append(tp)
 
 			# tpr=true-positive rate
@@ -351,12 +361,12 @@ class Scop40:
 
 		self.nrtps_to_firstfp = 0
 		for i in range(nrhits):
-			score = plot_scores[i]
+			score = scores[i]
 			tp = self.tps[i]
 			q = qs[i].split('/')[0]
 			tp = self.tps[i]
-			if tp and not dom2score_firstfp[q] is None and \
-				self.score1_is_better(score, dom2score_firstfp[q]):
+			if tp and not self.dom2score_firstfp[q] is None and \
+				self.score1_is_better(score, self.dom2score_firstfp[q]):
 				self.nrtps_to_firstfp += 1
 		self.sens_to_firstfp = float(self.nrtps_to_firstfp)/self.NT
 		nr_unknown = len(unknown_doms)
@@ -386,6 +396,7 @@ class Scop40:
 		else:
 			assert False
 
+		self.unknown_doms = set()
 		self.read_dom2scopid(dom2scopid_fn)
 		self.set_possible_tfs()
 
@@ -430,3 +441,66 @@ class Scop40:
 		summary += " N1FP=%u" % self.nrtps_to_firstfp
 		summary += " area=%.3g" % area
 		return summary
+
+	def top_hit_report1(self, f, dom, scoretp, scorefp, ntp, nfp):
+		nr_doms = len(self.doms)
+		nr_possible_tps = nr_doms - self.nrsingletons
+		s = dom
+		if scoretp is None:
+			s += "\t."
+		else:
+			s += "\t%.3g" % scoretp
+
+		if scorefp is None:
+			s += "\t."
+		else:
+			s += "\t%.3g" % scorefp
+		s += "\t%.4f\t%.4f" % (ntp/nr_possible_tps, nfp/nr_doms)
+		f.write(s + "\n")
+
+	def top_hit_report(self, fn):
+		K = 100
+		f = open(fn, "w")
+		ntp = 0
+		nfp = 0
+		v = []
+		for dom in self.doms:
+			scoretp = self.dom2score_firsttp[dom]
+			scorefp = self.dom2score_firstfp[dom]
+			if scoretp is None and scorefp is None:
+				continue
+			if scoretp is None and scorefp is None:
+				if self.score1_is_better(scoretp, scorefp):
+					sort_score = scoretp
+				else:
+					sort_score = scorefp
+			elif scoretp is None:
+				assert not scorefp is None
+				sort_score = scorefp
+			else:
+				assert not scoretp is None
+				sort_score = scoretp
+			pair = (sort_score, dom)
+			v.append(pair)
+		do_reverse = (self.se == "s")
+		v_sorted = sorted(v, reverse=do_reverse)
+		for score, dom in v_sorted:
+			scoretp = self.dom2score_firsttp[dom]
+			scorefp = self.dom2score_firstfp[dom]
+			if scoretp is None and scorefp is None:
+				continue
+			elif scoretp is None and not scorefp is None:
+				nfp += 1
+			elif not scoretp is None and scorefp is None:
+				ntp += 1
+			elif not scoretp is None and not scorefp is None:
+				if self.score1_is_better(scoretp, scorefp):
+					ntp += 1
+				else:
+					nfp += 1
+			else:
+				assert False
+			if (ntp + nfp)%K == 0:
+				self.top_hit_report1(f, dom, scoretp, scorefp, ntp, nfp)
+		self.top_hit_report1(f, dom, scoretp, scorefp, ntp, nfp)
+		f.close()
