@@ -145,7 +145,7 @@ for level in [ "family", "sf", "fold" ]:
 		if row > nr_rows:
 			sys.stderr.write("WARNING size\n")
 			break
-	ax.set_title("CVE %s" % strlevel)
+	ax.set_title("Sensitivity-error %s" % strlevel)
 	ax.ticklabel_format(axis='y', style='plain')
 	ax.set_yscale('log')
 	ax.yaxis.set_major_formatter(ScalarFormatter())

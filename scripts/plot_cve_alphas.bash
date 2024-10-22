@@ -2,8 +2,10 @@
 
 mkdir -p ../results
 
-python3 ../py/plot_roc.py \
-  ../results/roc_alphas.svg \
+svg=../plots/cve_alphas.svg
+
+python3 ../py/plot_cve.py \
+  $out \
   reseek_sensitive reseek_aa_myss reseek_aa_myss_nbrmyss reseek_aa_myss_nbrmyss_revnbrdist foldseek
 
-ls -lh ../results/roc_alphas.svg
+ls -lh $out

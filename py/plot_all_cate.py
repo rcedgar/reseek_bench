@@ -61,8 +61,8 @@ for level in [ "family", "sf", "fold" ]:
 	ax.set_title("Top-hit %s" % strlevel)
 	ax.ticklabel_format(axis='y', style='plain')
 	ax.set_yscale('log')
-	ax.set_xlabel("TP")
-	ax.set_ylabel("FP")
+	ax.set_xlabel("TCR")
+	ax.set_ylabel("FCR")
 
 	for idx, algo in enumerate(algos):
 		name, kwargs = algo_fmt(algo)

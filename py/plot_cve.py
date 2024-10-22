@@ -18,18 +18,22 @@ elif svg_fn.find("family") >= 0:
 MIN_EPQ = 0.01
 MAX_EPQ = 10
 
+# tpr     epq		fpr				precision       score
+# 0.01    0.001784  0.004378        0.9956			95
+
+
 def read_analysis(fn):
 	f = open(fn)
 	hdr = f.readline()
-	assert hdr == "tpr\tepq\tscore\n"
+	assert hdr.startswith("tpr\tepq\tfpr\tprecision")
 	tprs = []
 	epqs = []
 	scores = []
 	for line in f:
-		if line.startswith("epq"):
+		if line.startswith("SEPQ"):
 			break
 		flds = line[:-1].split('\t')
-		assert len(flds) == 3
+		assert len(flds) > 3
 		tpr = float(flds[0])
 		epq = float(flds[1])
 		score = float(flds[2])
@@ -63,7 +67,7 @@ for algo in algos:
 	elif level == "family":
 		fn = "../analysis_family/" + algo + ".txt"
 	else:
-		fn = "../analysis/" + algo + ".txt"
+		fn = "../analysis_sf/" + algo + ".txt"
 	tprs, epqs, scores = read_analysis(fn)
 	ax.plot(tprs, epqs, label=name, **kwargs)
 
