@@ -8,9 +8,8 @@ from algo_fmt import algo_fmt
 
 # level = sys.argv[1]
 # assert level == "family" or level == "sf" or level == "fold"
-algos = sys.argv[1:]
-
-svg_fn = "../plots/cate.svg"
+svg_fn = sys.argv[1]
+algos = sys.argv[2:]
 
 def read_analysis(fn):
 	f = open(fn)
@@ -30,15 +29,10 @@ def read_analysis(fn):
 # fig = plt.figure()
 
 nr_algos = len(algos)
-nr_rows = 1
-nr_cols = 3
-fig, axs = plt.subplots(ncols=nr_cols, nrows=nr_rows, \
-	figsize=(15, 5), layout="constrained")
-row = 0
-col = 0
+fig, ax = plt.subplots()
 
 ax_idx = 0
-for level in [ "family", "sf", "fold" ]:
+for level in [ "sf" ]: # [ "family", "sf", "fold" ]:
 	strlevel = level
 	if level == "sf":
 		strlevel = "superfamily"
@@ -54,11 +48,8 @@ for level in [ "family", "sf", "fold" ]:
 		fpr_vec.append(fprs)
 
 	sys.stderr.write(level + " top-hit\n")
-#	fig, ax = plt.subplots()
-	ax = axs[row]
-	row += 1
 
-	ax.set_title("Top-hit %s" % strlevel)
+#	ax.set_title("Top-hit %s" % strlevel)
 	ax.ticklabel_format(axis='y', style='plain')
 	ax.set_yscale('log')
 	ax.set_xlabel("Category coverage")
