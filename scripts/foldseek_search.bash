@@ -20,3 +20,5 @@ cd ../foldseek_search
 	  -s 9.5 --max-seqs 2000 -e 10 \
 	  foldseek.tsv \
 	  $tmpdir
+
+rm -rf $tmpdir
