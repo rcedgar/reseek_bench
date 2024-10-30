@@ -196,6 +196,8 @@ class Scop40:
 			self.eval_unsorted(self.qs, self.ts, self.scores)
 
 	def is_tp(self, q, t):
+		q = q.split('/')[0]
+		t = t.split('/')[0]
 		if self.level == "family":
 			qfam = self.dom2fam.get(q)
 			tfam = self.dom2fam.get(t)
