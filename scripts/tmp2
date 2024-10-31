@@ -1,0 +1,6 @@
+#!/bin/bash -ve
+
+rm -f ../analysis_sf/reseek_sensitive_qual.txt 
+rm -f ../analysis_fold/reseek_sensitive_qual.txt 
+./analyze_sf.bash reseek_sensitive_qual score
+./analyze_fold.bash reseek_sensitive_qual score
