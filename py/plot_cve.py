@@ -14,7 +14,9 @@ if svg_fn.find("fold") >= 0:
 	level = "fold"
 elif svg_fn.find("family") >= 0:
 	level = "family"
-
+elif svg_fn.find("ignore") >= 0:
+	level = "ignore"
+sys.stderr.write("level=" + level + "\n")
 MIN_EPQ = 0.01
 MAX_EPQ = 10
 
@@ -66,8 +68,11 @@ for algo in algos:
 		fn = "../analysis_fold/" + algo + ".txt"
 	elif level == "family":
 		fn = "../analysis_family/" + algo + ".txt"
+	elif level == "ignore":
+		fn = "../analysis_ignore/" + algo + ".txt"
 	else:
 		fn = "../analysis_sf/" + algo + ".txt"
+	sys.stderr.write(fn + "\n")
 	tprs, epqs, scores = read_analysis(fn)
 	ax.plot(tprs, epqs, label=name, **kwargs)
 
