@@ -14,6 +14,8 @@ if svg_fn.find("fold") >= 0:
 	level = "fold"
 elif svg_fn.find("family") >= 0:
 	level = "family"
+elif svg_fn.find("half") >= 0:
+	level = "half"
 elif svg_fn.find("ignore") >= 0:
 	level = "ignore"
 sys.stderr.write("level=" + level + "\n")
@@ -70,6 +72,8 @@ for algo in algos:
 		fn = "../analysis_family/" + algo + ".txt"
 	elif level == "ignore":
 		fn = "../analysis_ignore/" + algo + ".txt"
+	elif level == "half":
+		fn = "../analysis_half/" + algo + ".txt"
 	else:
 		fn = "../analysis_sf/" + algo + ".txt"
 	sys.stderr.write(fn + "\n")

@@ -1,0 +1,32 @@
+nr_queries =  11211
+nr_pairs =  125675310
+family  NT =  108718
+family  NF =  125566592
+family  NI =  0
+sf  NT =  454766
+sf  NF =  125220544
+sf  NI =  0
+fold  NT =  1036538
+fold  NF =  124638772
+fold  NI =  0
+ignore  NT =  454766
+ignore  NF =  124638772
+ignore  NI =  581772
+f_s  NT =  217436
+f_s  NF =  124184006
+f_s  NI =  1273868
+nr_same_fam=108718
+nr_same_sf=454766
+nr_same_fold=1036538
+nr_same_fold_diff_sf=581772
+nr_same_sf_diff_fam=346048
+nr_doms=11211
+nr_fams=4161
+nr_sfs=1960
+nr_folds=1194
+NT1=  108718  NI1=  927820  NF1=124638772  N1=125675310
+NT2=  454766  NI2=  581772  NF2=124638772  N2=125675310
+NT3=  454766  NI3=       0  NF3=125220544  N3=125675310
+NT4=  346048  NI4=  690490  NF4=124638772  N4=125675310
+NT5=  581772  NI5=  454766  NF5=124638772  N5=125675310
+NT6= 1036538  NI6=       0  NF6=124638772  N6=125675310

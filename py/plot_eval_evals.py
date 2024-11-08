@@ -6,16 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 from algo_fmt import algo_fmt
 
-svg_fn = sys.argv[1] # "../plots/eval_eval.svg"
-
-if svg_fn.find("_sf") > 0:
-	level = "sf"
-elif svg_fn.find("_fold") > 0:
-	level = "fold"
-elif svg_fn.find("_half") > 0:
-	level = "half"
-else:
-	assert False
+svg_fn = "../plots/eval_evals.svg"
 
 #   0       1       2     3             4
 # tpr     epq     fpr     precision       score
@@ -42,27 +33,40 @@ def read_analysis(fn):
 	
 	return epqs, evalues
 
+# fig = plt.figure()
+
 fig, ax = plt.subplots()
 
-fs_epqs, fs_evalues = read_analysis("../analysis_" + level + "/foldseek.txt")
-rs_epqs, rs_evalues = read_analysis("../analysis_" + level + "/reseek_sensitive.txt")
+for algo in [ "foldseek", "reseek_sensitive" ]:
+	for level in [ "sf", "half", "fold" ]:
+		fs_epqs, fs_evalues = read_analysis("../analysis_" + level + "/" + algo + ".txt")
+		rs_epqs, rs_evalues = read_analysis("../analysis_" + level + "/" + algo + ".txt")
 
-name, kwargs = algo_fmt("foldseek")
-ax.plot(fs_evalues, fs_epqs, label="Foldseek", **kwargs)
+		kwargs = {}
+		if algo == "foldseek":
+			name = "Foldseek"
+			kwargs["color"] = "orange"
+		elif algo == "reseek_sensitive":
+			name = "Reseek (sensitive)"
+			kwargs["color"] = "black"
 
-name, kwargs = algo_fmt("reseek_sensitive")
-ax.plot(rs_evalues, rs_epqs, label="Reseek-sensitive", **kwargs)
+		kwargs["linewidth"] = 3
+		if level == "sf":
+			kwargs["linestyle"] = "dashed"
+		elif level == "half":
+			kwargs["linestyle"] = "solid"
+		elif level == "fold":
+			kwargs["linestyle"] = "dotted"
+
+		ax.plot(fs_evalues, fs_epqs, label=name +" / "+level, **kwargs)
 
 ax.ticklabel_format(axis='y', style='plain')
 ax.set_xscale('log')
 ax.set_yscale('log')
-ax.set_ylim(1e-2, 100)
-ax.set_xlim(1e-8, 100)
 ax.set_xlabel("Reported E-value")
 ax.set_ylabel("Measured FPEPQ")
 plt.grid()
 ax.legend()
-fig.set_figwidth(4)
-fig.set_figheight(3)
-sys.stderr.write(level + ": " + svg_fn + "\n")
+
+sys.stderr.write(svg_fn + "\n")
 fig.savefig(svg_fn)

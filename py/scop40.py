@@ -36,6 +36,7 @@ class Scop40:
 	def set_possible_tfs_family(self):
 		self.dom2nrpossibletps = {}
 		self.NT = 0
+		self.NI = 0
 		for dom in self.doms:
 			fam = self.dom2fam[dom]
 			famsize = self.fam2size[fam]
@@ -49,6 +50,7 @@ class Scop40:
 	def set_possible_tfs_sf(self):
 		self.dom2nrpossibletps = {}
 		self.NT = 0
+		self.NI = 0
 		for dom in self.doms:
 			sf = self.dom2sf[dom]
 			sfsize = self.sf2size[sf]
@@ -83,9 +85,44 @@ class Scop40:
 			self.NT += n
 		self.NF = self.nrdompairs - self.NT - self.NI # total possible FPs
 
+	def set_possible_tfs_f_s(self):
+		self.dom2nrpossibletps = {}
+		self.nrsingletons = 0 # nr singleton families (no possible non-trivial TPs)
+		self.NT = 0 # nr ignored pairs
+		self.NI = 0 # nr ignored pairs
+		for dom in self.doms:
+			n = 0
+			fam = self.dom2fam[dom]
+			sf = self.dom2sf[dom]
+			fold = self.dom2fold[dom]
+			fold_doms = self.fold2doms[fold]
+			sf_doms = self.sf2doms[sf]
+			for fold_dom in fold_doms:
+				if fold_dom == dom:
+					continue
+				fold_dom_fam = self.dom2fam[fold_dom]
+				if fold_dom_fam == fam:
+					n += 1
+				else:
+					self.NI += 1
+			for sf_dom in sf_doms:
+				if sf_dom == dom:
+					continue
+				sf_dom_fam = self.dom2fam[sf_dom]
+				if sf_dom_fam == fam:
+					n += 1
+				else:
+					self.NI += 1
+			if n == 0:
+				self.nrsingletons += 1
+			self.dom2nrpossibletps[dom] = n
+			self.NT += n
+		self.NF = self.nrdompairs - self.NT - self.NI # total possible FPs
+
 	def set_possible_tfs_fold(self):
 		self.dom2nrpossibletps = {}
 		self.NT = 0
+		self.NI = 0
 		for dom in self.doms:
 			fold = self.dom2fold[dom]
 			foldsize = self.fold2size[fold]
@@ -105,10 +142,14 @@ class Scop40:
 			self.set_possible_tfs_family()
 		elif self.level == "sf":
 			self.set_possible_tfs_sf()
+		elif self.level == "half":
+			self.set_possible_tfs_sf()
 		elif self.level == "ignore":
 			self.set_possible_tfs_ignore()
 		elif self.level == "fold":
 			self.set_possible_tfs_fold()
+		elif self.level == "f_s":
+			self.set_possible_tfs_f_s()
 		else:
 			assert False
 
@@ -155,27 +196,15 @@ class Scop40:
 				self.folds.add(fold)
 			self.fold2doms[fold].append(dom)
 
-		if self.level == "family":
-			self.fam2size = {}
-			for fam in self.fams:
-				self.fam2size[fam] = len(self.fam2doms[fam])
-		elif self.level == "sf":
-			self.sf2size = {}
-			for sf in self.sfs:
-				self.sf2size[sf] = len(self.sf2doms[sf])
-		elif self.level == "fold":
-			self.fold2size = {}
-			for fold in self.folds:
-				self.fold2size[fold] = len(self.fold2doms[fold])
-		elif self.level == "ignore":
-			self.sf2size = {}
-			for sf in self.sfs:
-				self.sf2size[sf] = len(self.sf2doms[sf])
-			self.fold2size = {}
-			for fold in self.folds:
-				self.fold2size[fold] = len(self.fold2doms[fold])
-		else:
-			assert False
+		self.fam2size = {}
+		for fam in self.fams:
+			self.fam2size[fam] = len(self.fam2doms[fam])
+		self.sf2size = {}
+		for sf in self.sfs:
+			self.sf2size[sf] = len(self.sf2doms[sf])
+		self.fold2size = {}
+		for fold in self.folds:
+			self.fold2size[fold] = len(self.fold2doms[fold])
 
 	def eval_unsorted(self, qs, ts, plot_scores):
 		if not self.quiet:
@@ -245,6 +274,7 @@ class Scop40:
 					return 1
 				else:
 					return 0
+
 		elif self.level == "sf":
 			qsf = self.dom2sf.get(q)
 			tsf = self.dom2sf.get(t)
@@ -259,6 +289,7 @@ class Scop40:
 					return 1
 				else:
 					return 0
+
 		elif self.level == "ignore":
 			qsf = self.dom2sf.get(q)
 			tsf = self.dom2sf.get(t)
@@ -275,6 +306,27 @@ class Scop40:
 					return 1
 				elif qfold != tfold:
 					return 0
+				else:
+					return -1
+
+		elif self.level == "half":
+			qsf = self.dom2sf.get(q)
+			tsf = self.dom2sf.get(t)
+			qfold = self.dom2fold.get(q)
+			tfold = self.dom2fold.get(t)
+			if qsf is None or tsf is None:
+				if qsf is None:
+					self.unknown_doms.add(q)
+				if tsf is None:
+					self.unknown_doms.add(t)
+				return -1
+			else:
+				if qsf == tsf:
+					return 1
+				elif qfold != tfold:
+					return 0
+				elif qsf != tsf and qfold == tfold:
+					return 0.5
 				else:
 					return -1
 
@@ -360,6 +412,8 @@ class Scop40:
 				if self.dom2score_firstfp.get(q) is None or \
 					self.score1_is_better(score, self.dom2score_firstfp[q]):
 					self.dom2score_firstfp[q] = score
+			elif tp == 0.5:
+				nfp += 0.5
 			elif tp == -1:
 				ni += 1
 			else:
@@ -452,7 +506,7 @@ class Scop40:
 
 	def __init__(self, se, level, dom2scopid_fn, quiet = False):
 		assert se == "s" or se == "e" # score or E-value
-		assert level == "family" or level == "sf" or level == "fold" or level == "ignore"
+		assert level == "family" or level == "sf" or level == "half" or level == "fold" or level == "ignore" or level == "f_s"
 
 		self.se = se
 		self.level = level

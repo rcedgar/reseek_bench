@@ -14,7 +14,7 @@ AP = argparse.ArgumentParser(description = Usage)
 AP.add_argument("--input", required=False, default="/dev/stdin", help="Hits tsv file (default stdin)")
 AP.add_argument("--fields", required=False, default="1,2,3", help="query,target,score (default 1,2,3)")
 AP.add_argument('--type', required=True, choices=[ "score", "evalue"], help="Larger value is better (score) or worse (E-value)")
-AP.add_argument("--level", required=False, choices=[ "family", "sf", "fold", "ignore"], default="sf", help="family, sf or fold (default sf)")
+AP.add_argument("--level", required=False, choices=[ "family", "sf", "fold", "half", "ignore"], default="sf", help="family, sf, half, igore or fold (default sf)")
 AP.add_argument('--sort', action='store_true', help="Sort input (default already sorted)")
 AP.add_argument('--lookup', default="../data/dom_scopid.tsv", help="Lookup file (default ../data/dom_scopid.tsv)")
 
