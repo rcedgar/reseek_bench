@@ -10,8 +10,6 @@ level = sys.argv[3]
 out_fn = sys.argv[4]
 dom2scopid_fn = "../data/dom_scopid.tsv"
 
-assert level == "family" or level == "sf" or level == "fold" or level == "ignore" or level == "half"
-
 if score_or_evalue == "score":
 	se = "s"
 elif score_or_evalue == "evalue":

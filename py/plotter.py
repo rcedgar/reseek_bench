@@ -14,19 +14,10 @@ class Plotter:
 			figsize=(fig_width, fig_height), layout="constrained")
 
 	def level_name(self, level):
-		if level == "sf":
-			return "SF"
-		elif level == "fold":
-			return "Fold"
-		elif level == "half":
-			return "F/S"
-		elif level == "ignore":
-			return "F-S"
-		else:
-			return level
+		return level
 
 	def read_analysis(self, level, algo):
-		fn = "../analysis_%s/%s.txt" % (level, algo)
+		fn = "../analysis/%s.%s.txt" % (algo, level)
 		f = open(fn)
 		hdr = f.readline()
 		#                0	1	2	3			4
@@ -123,7 +114,7 @@ class Plotter:
 			self.row_idx += 1
 		return ax
 
-	def plot_precision_recall(self, level, algos, show_legend = True):
+	def plot_pr(self, level, algos, show_legend = True):
 		ax = self.inc_ax()
 		ax.set_title("Precision-recall %s" % self.level_name(level))
 		ax.ticklabel_format(axis='y', style='plain')
@@ -161,10 +152,10 @@ class Plotter:
 		ax.ticklabel_format(axis='y', style='plain')
 		ax.set_yscale('log')
 		ax.yaxis.set_major_formatter(ScalarFormatter())
-		if level == "family":
+		if level == "fam1":
 			ax.set_xticks(np.arange(0.0, 1.0, 0.1))
 		else:
-			ax.set_xticks(np.arange(0.0, 0.55, 0.05))
+			ax.set_xticks(np.arange(0.0, 0.6, 0.1))
 		ax.set_ylim(0.01, 10)
 		ax.set_xlabel("Sensitivity (fraction of all homologs found)")
 		ax.set_ylabel("False positive errors per query")
@@ -197,9 +188,21 @@ class Plotter:
 			self.plot_roc(level, algos)
 		self.fig.savefig(svg_fn)
 
-	def plot_precision_recalls(self, levels, algos, svg_fn):
-		show_legend = True
+	def plot_prs(self, levels, algos, svg_fn):
 		for level in levels:
-			self.plot_precision_recall(level, algos) 
-			show_legend = False
+			self.plot_pr(level, algos) 
 		self.fig.savefig(svg_fn)
+
+	def plot_levels(self, style, levels, algos):
+		n = len(levels)
+		for i in range(n):
+			level = levels[i]
+			leg = (i == n-1)
+			if style == "cve":
+				self.plot_cve(level, algos, leg)
+			elif style == "pr":
+				self.plot_pr(level, algos, leg)
+			elif style == "roc":
+				self.plot_roc(level, algos, leg)
+			else:
+				assert False, style

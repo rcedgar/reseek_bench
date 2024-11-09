@@ -1,3 +1,4 @@
+nr_singleton_sfs = 838
 nr_queries =  11211
 nr_pairs =  125675310
 family  NT =  108718

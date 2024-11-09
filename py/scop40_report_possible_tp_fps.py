@@ -3,23 +3,19 @@
 import sys
 import scop40
 
-first = True
-for level in [ "family", "sf", "fold", "ignore", "f_s" ]:
-	sc = scop40.Scop40("e", level, "../data/dom_scopid.tsv")
-	NQ = len(sc.doms)
-	nr_pairs = NQ*(NQ - 1)
-	if first:
-		print("nr_queries = ", NQ)
-		print("nr_pairs = ", nr_pairs)
-		first = False
-	print(level, " NT = ", sc.NT)
-	print(level, " NF = ", sc.NF)
-	print(level, " NI = ", sc.NI)
+sc = scop40.Scop40("e", "sf3", "../data/dom_scopid.tsv")
+sc.report_standard_counts()
 
 doms = sc.doms
 dom2fam = sc.dom2fam
 dom2sf = sc.dom2sf
 dom2fold = sc.dom2fold
+
+nr_singleton_sfs = 0
+for sf in sc.sfs:
+	if sc.sf2size[sf] == 1:
+		nr_singleton_sfs += 1
+print("nr_singleton_sfs = %d\n" % nr_singleton_sfs)
 
 nr_same_fam = 0
 nr_same_sf = 0
@@ -90,13 +86,9 @@ NT2 = nr_same_sf
 NF2 = nr_diff_sf
 NI2 = 0
 
-NT2 = nr_same_sf
-NF2 = nr_diff_fold
-NI2 = nr_same_fold_diff_sf
-
 NT3 = nr_same_sf
-NF3 = nr_diff_sf
-NI3 = 0
+NF3 = nr_diff_fold
+NI3 = nr_same_fold_diff_sf
 
 NT4 = nr_same_sf - nr_same_fam
 NF4 = nr_diff_fold
