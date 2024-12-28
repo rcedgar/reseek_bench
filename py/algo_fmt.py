@@ -7,18 +7,27 @@ def algo_fmt(algo):
 	if algo == "reseek_fast":
 		name = "Reseek (fast)"
 		color = "black"
-		lw = 3
 		ls = "dotted"
-	elif algo == "reseek_v1.2":
-		name = "Reseek v1.2"
-		color = "gray"
-	elif algo == "reseek_verysensitive":
-		name = "Reseek (verysensitive)"
-		color = "gray"
-		ls = "dashed"
 	elif algo == "reseek_sensitive":
 		name = "Reseek (sensitive)"
 		color = "black"
+		ls = "dashed"
+	elif algo == "reseek_verysensitive":
+		name = "Reseek (verysensitive)"
+		color = "black"
+
+	elif algo == "reseek21_fast":
+		name = "Reseek2.1 (fast)"
+		color = "lightgray"
+		ls = "dotted"
+	elif algo == "reseek21_sensitive":
+		name = "Reseek2.1 (sensitive)"
+		color = "lightgray"
+		ls = "dashed"
+	elif algo == "reseek21_verysensitive":
+		name = "Reseek2.1 (verysensitive)"
+		color = "lightgray"
+
 	elif algo == "blastp":
 		name = "BLASTP"
 		ls = "dotted"
