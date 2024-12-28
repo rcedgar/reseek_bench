@@ -1,3 +1,4 @@
+full_pdbs/
 alns/
 awk/
 blast_binaries/
@@ -17,3 +18,11 @@ __pycache__/
 old_scripts/
 saved_analysis/
 Thumbs.db
+misc/
+foldseek_full_ge500/
+foldseek_search_full/
+full_length_out/
+reseek_ge500/
+reseek_search_dbsizes/
+reseek_search_full/
+tm_ge500/
