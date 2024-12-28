@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+dir=../tm_ge500
+N=101250
+
+while true
+do
+	n=`ls $dir | wc -l`
+	pct=`python3 -c "print('%.2f' % ($n*100/$N))"`
+	echo `mydate` n=$n pct=$pct
+	sleep 60
+done

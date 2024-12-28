@@ -1,0 +1,17 @@
+#!/bin/bash -e
+
+dir=../full_chains_ge500
+
+mkdir -p ../foldseek_full_ge500
+cd ../foldseek_full_ge500
+
+rm -rf ../foldseek_tmp
+mkdir -p ../foldseek_tmp
+
+foldseek \
+  easy-search \
+  $dir \
+  $dir \
+  -s 9.5 --max-seqs 2000 -e 10 \
+  hits.tsv \
+  ../foldseek_tmp

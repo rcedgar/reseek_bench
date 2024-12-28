@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+cat ../full_length_out/ge500.pairs \
+	| parallel -j 32 ./tm_ge500_pair.bash
