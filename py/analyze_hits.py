@@ -53,5 +53,6 @@ sc = scop40.Scop40(se, level, dom2scopid_fn)
 
 # def eval_file(self, fn, qfldnr, tfldnr, scorefldnr, is_sorted):
 sc.eval_file(tsv_fn, qfldnr, tfldnr, scorefldnr, is_sorted)
-n = sc.plot2filehandle(sys.stdout)
+sc.plot2filehandle(sys.stdout)
 print(sc.get_summary())
+

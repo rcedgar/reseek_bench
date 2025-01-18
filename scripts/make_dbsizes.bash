@@ -6,7 +6,7 @@ cal=../full_length_out/full_chains.cal
 mkdir -p ../dbsizes
 cd ../dbsizes
 
-for n in 256 512 1024 2048 4096
+for n in 128 256 512 1024 2048 4096
 do
 	randlines.py $labels $n \
 	  > $n.labels

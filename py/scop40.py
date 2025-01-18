@@ -257,8 +257,11 @@ class Scop40:
 		assert len(scores) == nrhits
 		last_score = None
 
-		ntp = 0         # accumulated nr of TP hits
-		nfp = 0         # accumulated nr of FP hits
+		self.ntp = 0         # accumulated nr of TP hits
+		self.nfp = 0         # accumulated nr of FP hits
+
+		self.ntpe1 = 0       # accumulated nr of TP hits with E<=1
+		self.nfpe1 = 0       # accumulated nr of FP hits with E<=1
 
 		tpstep = 0.01   # bin size for TPs (X axis tick marks)
 		tprt = 0.01     # current TPR threshold, +=tpstep during scan
@@ -303,12 +306,16 @@ class Scop40:
 
 			tp = self.is_tp(q, t)
 			if tp == 1:
-				ntp += 1
+				self.ntp += 1
+				if self.se == 'e' and score <= 1:
+					self.ntpe1 += 1
 				if self.dom2score_firsttp.get(q) is None or \
 					self.score1_is_better(score, self.dom2score_firsttp[q]):
 					self.dom2score_firsttp[q] = score
 			elif tp == 0:
-				nfp += 1
+				self.nfp += 1
+				if self.se == 'e' and score <= 1:
+					self.nfpe1 += 1
 				if self.dom2score_firstfp.get(q) is None or \
 					self.score1_is_better(score, self.dom2score_firstfp[q]):
 					self.dom2score_firstfp[q] = score
@@ -319,17 +326,17 @@ class Scop40:
 			self.tps.append(tp)
 
 			# tpr=true-positive rate
-			tpr = float(ntp)/self.NT
+			tpr = float(self.ntp)/self.NT
 
 			# fpepq = false-positive errors per query
-			fpepq = float(nfp)/self.nrdoms
+			fpepq = float(self.nfp)/self.nrdoms
 
 			# precision = tp/(tp + fp)
 			precision = 0
 			fpr = 0
-			if ntp+nfp > 0:
-				precision = ntp/(ntp + nfp)
-				fpr = nfp/(ntp + nfp)
+			if self.ntp+self.nfp > 0:
+				precision = self.ntp/(self.ntp + self.nfp)
+				fpr = self.nfp/(self.ntp + self.nfp)
 
 			if fpepq >= 0.1 and self.tpr_at_fpepq0_1 is None:
 				self.tpr_at_fpepq0_1 = tpr
@@ -370,8 +377,8 @@ class Scop40:
 		if self.tpr_at_fpepq10 is None:
 			self.tpr_at_fpepq1 = tpr
 	
-		tpr = float(ntp)/self.NT
-		fpepq = float(nfp)/self.nrdoms
+		tpr = float(self.ntp)/self.NT
+		fpepq = float(self.nfp)/self.nrdoms
 
 		self.plot_tprs.append(tprt)
 		self.plot_fprs.append(fpr)
@@ -458,6 +465,13 @@ class Scop40:
 		summary += " S1FP=%.4f" % self.sens_to_firstfp
 		summary += " N1FP=%u" % self.nrtps_to_firstfp
 		summary += " area=%.3g" % area
+		return summary
+
+	def get_summary2(self):
+		summary = "TP=%u" % self.ntp
+		summary += " TP1=%u" % self.ntpe1
+		summary += " FP=%u" % self.nfp
+		summary += " FP1=%u" % self.nfpe1
 		return summary
 
 	def top_hit_report1(self, f, dom, scoretp, scorefp, ntp, nfp):

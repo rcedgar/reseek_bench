@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+grep SEPQ \
+	../analysis/reseek_fast.sf2.txt \
+	../analysis/reseek21_fast.sf2.txt \
+	| sed "-es/.*\///" \
+	| tr ':' '\t'
+
+echo
+grep SEPQ \
+	../analysis/reseek_sensitive.sf2.txt \
+	../analysis/reseek21_sensitive.sf2.txt \
+	| sed "-es/.*\///" \
+	| tr ':' '\t'
+
+echo
+grep SEPQ \
+	../analysis/reseek_verysensitive.sf2.txt \
+	../analysis/reseek21_verysensitive.sf2.txt \
+	| sed "-es/.*\///" \
+	| tr ':' '\t'

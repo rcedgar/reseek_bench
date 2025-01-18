@@ -1,0 +1,23 @@
+	Command being timed: "./reseek -search 1024.cal -db pdb95.bca -fast -dbsize 10000 -log t2.2xlarge.q1024.pdb95.log"
+	User time (seconds): 19607.10
+	System time (seconds): 2.45
+	Percent of CPU this job got: 799%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 40:54.05
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 79016
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 28546
+	Voluntary context switches: 10539
+	Involuntary context switches: 112038
+	Swaps: 0
+	File system inputs: 208
+	File system outputs: 16
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
