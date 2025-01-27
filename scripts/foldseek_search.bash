@@ -17,7 +17,6 @@ cd ../foldseek_search
 	  easy-search \
 	  $query_pdbdir \
 	  $db \
-	  -s 9.5 --max-seqs 2000 -e 10 \
 	  foldseek.tsv \
 	  $tmpdir
 

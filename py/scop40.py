@@ -172,6 +172,13 @@ class Scop40:
 			self.eval_sorted(self.qs, self.ts, self.scores)
 		else:
 			self.eval_unsorted(self.qs, self.ts, self.scores)
+	
+	def is_reversed(self, label):
+		if label.find("_reversed") > 0:
+			return True
+		if label.find("model") > 0:
+			return True
+		return False
 
 	# 1=TP, 0=FP, -1=ignore
 	def is_tp(self, q, t):
@@ -191,6 +198,12 @@ class Scop40:
 		elif self.level == "sf2":
 			qsf = self.dom2sf.get(q)
 			tsf = self.dom2sf.get(t)
+			if not qsf is None and self.is_reversed(t):
+				self.nr_reversed_fp += 1
+				return 0
+			if not tsf is None and self.is_reversed(q):
+				self.nr_reversed_fp += 1
+				return 0
 			if qsf is None or tsf is None:
 				return -1
 			if qsf == tsf:
@@ -246,19 +259,87 @@ class Scop40:
 
 		assert False
 
+	def set_steps(self):
+		self.ntp = 0         # accumulated nr of TP hits
+		self.nfp = 0         # accumulated nr of FP hits
+		self.step_scores = []
+		self.tps = []
+		self.step_ntps = []
+		self.step_nfps = []
+		nrhits = len(self.qs)
+		assert nrhits > 10
+		assert len(self.ts) == nrhits
+		assert len(self.scores) == nrhits
+		last_score = None
+		self.ntpe1 = 0
+		self.nfpe1 = 0
+		if not self.quiet:
+			sys.stderr.write("Making steps...\n")
+		for i in range(nrhits):
+			if not self.quiet:
+				if i%100000 == 0:
+					gb = get_memory_usage()
+					pct = 100*i/nrhits
+					sys.stderr.write("%.1f%%, %.1f Gb RAM used   \r" % (pct, gb))
+			q = self.qs[i].split('/')[0]
+			t = self.ts[i].split('/')[0]
+			if q == t:
+				assert False, "Self-hits not removed"
+			score = self.scores[i]
+			if score != last_score and not last_score is None:
+				self.step_scores.append(last_score)
+				self.step_ntps.append(self.ntp)
+				self.step_nfps.append(self.nfp)
+			last_score = score
+
+			if i > 0 and last_score != score:
+				if not self.score1_is_better(last_score, score):
+					assert False, \
+						f"Not sorted correctly {q=} {t=} {self.se=} {last_score=} {score=}"
+
+			tp = self.is_tp(q, t)
+			self.tps.append(tp)
+			if tp == 1:
+				self.ntp += 1
+				if self.se == 'e' and score <= 1:
+					self.ntpe1 += 1
+			elif tp == 0:
+				self.nfp += 1
+				if self.se == 'e' and score <= 1:
+					self.nfpe1 += 1
+			elif tp == -1:
+				ni += 1
+			else:
+				assert False
+		self.step_scores.append(last_score)
+		self.step_ntps.append(self.ntp)
+		self.step_nfps.append(self.nfp)
+
+		if len(self.tps) != nrhits:
+			sys.stderr.write("%d %d\n" % (len(self.tps), nrhits))
+			assert False, "hello"
+
+		nrsteps = len(self.step_scores)
+		assert len(self.step_ntps) == nrsteps
+		assert len(self.step_nfps) == nrsteps
+
+		sys.stderr.write("%d hits, %d steps\n" % (nrhits, nrsteps))
+
 	def eval_sorted(self, qs, ts, scores):
 		self.qs = qs
 		self.ts = ts
 		self.scores = scores
+		self.set_steps()
+		nrsteps = len(self.step_scores)
+		assert len(self.step_ntps) == nrsteps
+		assert len(self.step_nfps) == nrsteps
+
+		self.nr_reversed_fp = 0
 		unknown_doms = set()
 		nrhits = len(qs)
 		assert nrhits > 10
 		assert len(ts) == nrhits
 		assert len(scores) == nrhits
-		last_score = None
-
-		self.ntp = 0         # accumulated nr of TP hits
-		self.nfp = 0         # accumulated nr of FP hits
 
 		self.ntpe1 = 0       # accumulated nr of TP hits with E<=1
 		self.nfpe1 = 0       # accumulated nr of FP hits with E<=1
@@ -282,61 +363,29 @@ class Scop40:
 			self.dom2score_firstfp[dom] = None
 			self.dom2score_firsttp[dom] = None
 
-		self.tps = []
 		ni = 0
 		if not self.quiet:
-			sys.stderr.write("scanning hits...\n")
-		for i in range(nrhits):
-			if not self.quiet:
-				if i%100000 == 0:
-					gb = get_memory_usage()
-					pct = 100*i/nrhits
-					sys.stderr.write("%.1f%%, %.1f Gb RAM used   \r" % (pct, gb))
-			q = qs[i].split('/')[0]
-			t = ts[i].split('/')[0]
-			if q == t:
-				assert False, "Self-hits not removed"
-			score = scores[i]
-
-			if i > 0 and last_score != score:
-				if not self.score1_is_better(last_score, score):
-					assert False, \
-						f"Not sorted correctly {q=} {t=} {self.se=} {last_score=} {score=}"
+			sys.stderr.write("Scanning hits...\n")
+		last_score = None
+		for i in range(nrsteps):
+			score = self.step_scores[i]
+			ntp = self.step_ntps[i]
+			nfp = self.step_nfps[i]
+			assert score != last_score
 			last_score = score
 
-			tp = self.is_tp(q, t)
-			if tp == 1:
-				self.ntp += 1
-				if self.se == 'e' and score <= 1:
-					self.ntpe1 += 1
-				if self.dom2score_firsttp.get(q) is None or \
-					self.score1_is_better(score, self.dom2score_firsttp[q]):
-					self.dom2score_firsttp[q] = score
-			elif tp == 0:
-				self.nfp += 1
-				if self.se == 'e' and score <= 1:
-					self.nfpe1 += 1
-				if self.dom2score_firstfp.get(q) is None or \
-					self.score1_is_better(score, self.dom2score_firstfp[q]):
-					self.dom2score_firstfp[q] = score
-			elif tp == -1:
-				ni += 1
-			else:
-				assert False
-			self.tps.append(tp)
-
 			# tpr=true-positive rate
-			tpr = float(self.ntp)/self.NT
+			tpr = float(ntp)/self.NT
 
 			# fpepq = false-positive errors per query
-			fpepq = float(self.nfp)/self.nrdoms
+			fpepq = float(nfp)/self.nrdoms
 
 			# precision = tp/(tp + fp)
 			precision = 0
 			fpr = 0
-			if self.ntp+self.nfp > 0:
-				precision = self.ntp/(self.ntp + self.nfp)
-				fpr = self.nfp/(self.ntp + self.nfp)
+			if ntp+nfp > 0:
+				precision = ntp/(ntp + nfp)
+				fpr = nfp/(ntp + nfp)
 
 			if fpepq >= 0.1 and self.tpr_at_fpepq0_1 is None:
 				self.tpr_at_fpepq0_1 = tpr
@@ -377,8 +426,8 @@ class Scop40:
 		if self.tpr_at_fpepq10 is None:
 			self.tpr_at_fpepq1 = tpr
 	
-		tpr = float(self.ntp)/self.NT
-		fpepq = float(self.nfp)/self.nrdoms
+		tpr = float(ntp)/self.NT
+		fpepq = float(nfp)/self.nrdoms
 
 		self.plot_tprs.append(tprt)
 		self.plot_fprs.append(fpr)
@@ -392,7 +441,7 @@ class Scop40:
 			tp = self.tps[i]
 			q = qs[i].split('/')[0]
 			tp = self.tps[i]
-			if tp and (self.dom2score_firstfp[q] is None or \
+			if tp and (self.dom2score_firstfp.get(q) is None or \
 				self.score1_is_better(score, self.dom2score_firstfp[q])):
 				self.nrtps_to_firstfp += 1
 		self.sens_to_firstfp = float(self.nrtps_to_firstfp)/self.NT
@@ -408,6 +457,7 @@ class Scop40:
 					s += "..."
 					break
 			sys.stderr.write(s + "\n")
+		sys.stderr.write("nr_reversed_fp=%d\n" % self.nr_reversed_fp)
 
 	def __init__(self, se, level, dom2scopid_fn, quiet = False):
 		assert se == "s" or se == "e" # score or E-value
@@ -462,9 +512,6 @@ class Scop40:
 		summary = "SEPQ0.1=%.4f" % self.tpr_at_fpepq0_1
 		summary += " SEPQ1=%.4f" % self.tpr_at_fpepq1
 		summary += " SEPQ10=%.4f" % self.tpr_at_fpepq10
-		summary += " S1FP=%.4f" % self.sens_to_firstfp
-		summary += " N1FP=%u" % self.nrtps_to_firstfp
-		summary += " area=%.3g" % area
 		return summary
 
 	def get_summary2(self):

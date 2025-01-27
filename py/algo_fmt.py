@@ -43,6 +43,15 @@ def algo_fmt(algo):
 		lw = 3
 		ls = "dotted"
 		color = "orange"
+	elif algo == "foldseek_afdbr":
+		name = "Foldseek (AFDB-Rev)"
+		lw = 2
+		color = "orange"
+	elif algo == "foldseek_afdbr_ms4000":
+		name = "Foldseek (AFDB-Rev-ms4000)"
+		lw = 2
+		ls = "dashed"
+		color = "orange"
 
 	kwargs = {}
 	kwargs["linewidth"] = lw
@@ -50,3 +59,8 @@ def algo_fmt(algo):
 	if not color is None:
 		kwargs["color"] = color
 	return name, kwargs
+
+def algo_fmt_fn(fn):
+	basenm = fn.split('/')[-1]
+	algo = basenm.split('.')[0]
+	return algo_fmt(algo)
